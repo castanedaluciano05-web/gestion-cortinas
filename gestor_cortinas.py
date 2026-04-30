@@ -33,7 +33,7 @@ def calcular_confeccion(ancho_riel, metraje_total, apertura):
 
 # --- INTERFAZ ---
 st.title("🧵 Sistema Inteligente de Confección")
-st.markdown("### Creado por Sub Comisario Castañeda Juan")
+st.markdown("### Creado por Luciano Castañeda ")
 
 # --- BARRA LATERAL: OCR Y STOCK ---
 st.sidebar.header("📸 Escanear Orden de Trabajo")
