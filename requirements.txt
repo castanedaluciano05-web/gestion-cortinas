@@ -1,6 +1,6 @@
 streamlit
 pandas
-easyocr
 opencv-python-headless
-numpy
+easyocr
+numpy<2.0.0
 Pillow
