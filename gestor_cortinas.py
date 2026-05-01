@@ -29,7 +29,6 @@ with st.sidebar:
     st.divider()
     st.header("⚙️ Ajustes de Costura")
     
-    # --- NUEVA OPCIÓN DE SOLAPA ---
     posee_solapa = st.checkbox("¿Lleva Solapa de Cruce?", value=True)
     cm_solapa = st.number_input("CM de Solapa (Solo 1 paño)", value=10) if posee_solapa else 0
     
@@ -47,15 +46,14 @@ with col2:
     fruncido = st.number_input("Factor Fruncido", value=2.2)
 
 with col3:
-    ruedo = st.number_input("Ruedo (cm)", value=20)
-    cabezal = st.number_input("Cabezal (cm)", value=5)
+    # --- CAMPOS SEPARADOS ---
+    cabezal = st.number_input("Cabezal (cm)", value=22, help="Consumo de tela para el doblez superior")
+    ruedo_inf = st.number_input("Ruedo Inferior (cm)", value=5, help="Consumo de tela para el dobladillo bajo")
 
 # --- LÓGICA DE METRAJE TOTAL ---
 solapa_m = (cm_solapa / 100)
-# Si es central, hay 4 dobladillos (0.16m). Si es lateral, hay 2 (0.08m).
 dobladillos_totales_m = 0.16 if apertura == "Central" else 0.08
 
-# Ancho real de tela estirada que necesitamos
 ancho_total_a_fruncir = ancho_r + solapa_m + dobladillos_totales_m
 metraje_necesario = ancho_total_a_fruncir * fruncido
 
@@ -73,8 +71,11 @@ with res_c1:
         st.error(f"❌ Falta tela en el rollo")
 
 with res_c2:
-    alto_corte = alto_v + ((ruedo + cabezal) / 100)
+    # --- CÁLCULO DE ALTURA CON CAMPOS SEPARADOS ---
+    consumo_vertical = (cabezal + ruedo_inf) / 100
+    alto_corte = alto_v + consumo_vertical
     st.metric("Altura de Corte", f"{alto_corte:.2f} m")
+    st.caption(f"Cálculo: {alto_v}m (Alto) + {cabezal}cm (Cabezal) + {ruedo_inf}cm (Ruedo)")
 
 # --- HOJA DE TALLER ---
 st.divider()
@@ -84,7 +85,7 @@ if apertura == "Central":
     t1, t2 = st.tabs(["Paño A (Simple)", "Paño B (Con Solapa)"])
     
     with t1:
-        ancho_p1 = (ancho_r / 2) + 0.08 # Mitad riel + 2 dobladillos
+        ancho_p1 = (ancho_r / 2) + 0.08
         metraje_p1 = (ancho_p1 * fruncido)
         ct, cp, mt, mp = calcular_confeccion(ancho_p1, metraje_p1)
         st.write(f"**Ancho paño estirado:** {ancho_p1:.2f} m")
@@ -92,16 +93,15 @@ if apertura == "Central":
         st.metric("Medida Pico (cm)", f"{mp:.2f}")
         
     with t2:
-        ancho_p2 = (ancho_r / 2) + solapa_m + 0.08 # Mitad + Solapa + 2 dobladillos
+        ancho_p2 = (ancho_r / 2) + solapa_m + 0.08
         metraje_p2 = (ancho_p2 * fruncido)
         ct2, cp2, mt2, mp2 = calcular_confeccion(ancho_p2, metraje_p2)
         st.write(f"**Ancho paño estirado (con solapa):** {ancho_p2:.2f} m")
         st.metric("Medida Tabla (cm)", f"{mt2:.2f}")
-        st.metric("Medida Pico (cm)", f"{mp2:.2f} cm")
+        st.metric("Medida Pico (cm)", f"{mp2:.2f}")
 else:
-    # Apertura Lateral (Un solo paño)
     ct, cp, mt, mp = calcular_confeccion(ancho_total_a_fruncir, metraje_necesario)
     st.metric("Medida Tabla (cm)", f"{mt:.2f}")
     st.metric("Medida Pico (cm)", f"{mp:.2f}")
 
-st.info("💡 La secuencia siempre inicia y termina con TABLA (Regla de Oro).")
+st.info("💡 Recordatorio: La secuencia siempre inicia y termina con TABLA.")
