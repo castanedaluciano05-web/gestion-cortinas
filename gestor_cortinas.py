@@ -29,7 +29,7 @@ def calcular_confeccion(ancho_riel, metraje_total, apertura):
 
 # --- INTERFAZ DE USUARIO ---
 st.title("✂️ Sistema de Confección Textil")
-st.markdown(f"**Desarrollado por: Sub Comisario Castañeda Juan**")
+st.markdown(f"**Desarrollado por: Castañeda Luciano**")
 
 # Barra lateral para Stock
 st.sidebar.header("📦 Sustento de Material")
