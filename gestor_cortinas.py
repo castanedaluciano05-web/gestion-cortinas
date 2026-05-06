@@ -22,7 +22,7 @@ SEPARACION_TABLAS_CM = 10
 APERTURAS = ["Central", "Derecha", "Izquierda", "Lateral"]
 PANOS_SOLAPA = ["Izquierda", "Derecha"]
 
-# Estilos Originales
+# Estilos Originales + Estilo Taller
 st.markdown("""
 <style>
 .main-title { font-size: 34px; font-weight: 800; color: #1f2937; margin-bottom: 0px; }
@@ -35,7 +35,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =====================================================
-# LÓGICA DE CÁLCULO (RESTABLECIDA TOTAL)
+# LÓGICA DE CÁLCULO (RECUPERADA AL 100%)
 # =====================================================
 def obtener_estructura_pano(ancho_visible_m):
     tablas = int(round((ancho_visible_m * 100) / SEPARACION_TABLAS_CM)) + 1
@@ -80,7 +80,7 @@ tab1, tab2 = st.tabs(["📝 BLOQUE 1: GESTIÓN (CARGA)", "🧵 BLOQUE 2: TALLER 
 
 with tab1:
     st.markdown('<div class="main-title">🧵 CastaMuebles - Gestión Textil Pro</div>', unsafe_allow_html=True)
-    st.markdown('<div class="subtitle">Módulo de Carga Original - Castañeda Juan & Luciano</div>', unsafe_allow_html=True)
+    st.markdown('<div class="subtitle">Creado por Castañeda Juan & Luciano.</div>', unsafe_allow_html=True)
 
     col_a, col_b, col_c = st.columns(3)
     st.session_state.data["cliente"] = col_a.text_input("Cliente", st.session_state.data["cliente"])
@@ -95,10 +95,10 @@ with tab1:
         with st.container():
             st.divider()
             st.markdown(f"### 📦 Lote {i+1}: {tela['nombre']}")
-            c1, c2, c3 = st.columns([2, 1, 1])
+            c1, col2, col3 = st.columns([2, 1, 1])
             tela["nombre"] = c1.text_input("Nombre tela", tela["nombre"], key=f"n_{i}")
-            tela["metros_recibidos"] = c2.number_input("Metros recibidos", float(tela["metros_recibidos"]), step=0.1, key=f"m_{i}")
-            tela["solapa_cm"] = c3.number_input("Cruce Solapa (cm)", int(tela["solapa_cm"]), key=f"s_{i}")
+            tela["metros_recibidos"] = col2.number_input("Metros recibidos", float(tela["metros_recibidos"]), key=f"m_{i}")
+            tela["solapa_cm"] = col3.number_input("Cruce Solapa (cm)", int(tela["solapa_cm"]), key=f"s_{i}")
             
             pico_m = calcular_pico_maestro_lote(tela)
             if pico_m > 0:
@@ -114,91 +114,77 @@ with tab1:
 
             for j, cortina in enumerate(tela["cortinas"]):
                 with st.expander(f"🪟 {cortina['ambiente']}", expanded=True):
+                    # RESTABLECIDOS TODOS LOS CAMPOS ORIGINALES
                     f1, f2, f3, f4 = st.columns([2, 1, 1, 1])
                     cortina["ambiente"] = f1.text_input("Ambiente", cortina["ambiente"], key=f"amb_{i}_{j}")
-                    cortina["ancho_riel"] = f2.number_input("Riel", float(cortina["ancho_riel"]), key=f"ri_{i}_{j}")
-                    cortina["alto_terminado"] = f3.number_input("Alto Term.", float(cortina["alto_terminado"]), key=f"al_{i}_{j}")
+                    cortina["ancho_riel"] = f2.number_input("Ancho Riel Total", float(cortina["ancho_riel"]), key=f"ri_{i}_{j}")
+                    cortina["alto_terminado"] = f3.number_input("Alto Terminado", float(cortina["alto_terminado"]), key=f"al_{i}_{j}")
                     cortina["apertura"] = f4.selectbox("Apertura", APERTURAS, index=APERTURAS.index(cortina["apertura"]), key=f"ap_{i}_{j}")
                     
-                    # Recupero los inputs de cabezal y ruedo que faltaban
                     f5, f6 = st.columns(2)
-                    cortina["cabezal"] = f5.number_input("Cabezal (cm)", int(cortina.get("cabezal", 22)), key=f"cab_{i}_{j}")
-                    cortina["ruedo"] = f6.number_input("Ruedo (cm)", int(cortina.get("ruedo", 5)), key=f"rue_{i}_{j}")
+                    cortina["cabezal"] = f5.number_input("Cabezal (cm)", int(cortina.get("cabezal", 22)), key=f"ca_{i}_{j}")
+                    cortina["ruedo"] = f6.number_input("Ruedo (cm)", int(cortina.get("ruedo", 5)), key=f"ru_{i}_{j}")
 
                     if cortina["apertura"] == "Central":
                         p1, p2, p3 = st.columns(3)
-                        cortina["ancho_pano_izq"] = p1.number_input("Riel Izq", float(cortina["ancho_pano_izq"]), key=f"iz_{i}_{j}")
-                        cortina["ancho_pano_der"] = p2.number_input("Riel Der", float(cortina["ancho_pano_der"]), key=f"de_{i}_{j}")
-                        cortina["pano_solapa"] = p3.selectbox("Solapa en", PANOS_SOLAPA, index=PANOS_SOLAPA.index(cortina["pano_solapa"]), key=f"ps_{i}_{j}")
+                        cortina["ancho_pano_izq"] = p1.number_input("Riel Izquierdo", float(cortina["ancho_pano_izq"]), key=f"iz_{i}_{j}")
+                        cortina["ancho_pano_der"] = p2.number_input("Riel Derecho", float(cortina["ancho_pano_der"]), key=f"de_{i}_{j}")
+                        cortina["pano_solapa"] = p3.selectbox("La solapa va en:", PANOS_SOLAPA, index=PANOS_SOLAPA.index(cortina.get("pano_solapa", "Derecha")), key=f"ps_{i}_{j}")
                     
-                    # REINSTALACIÓN DE LA TABLA DE RESULTADOS ORIGINAL
-                    sol_m = (tela["solapa_cm"]/100)
-                    alto_corte = cortina["alto_terminado"] + (cortina["cabezal"]/100) + (cortina["ruedo"]/100)
+                    # CÁLCULOS ORIGINALES EN PANTALLA DE CARGA
+                    alto_c = cortina["alto_terminado"] + (cortina["cabezal"]/100) + (cortina["ruedo"]/100)
+                    st.markdown(f"**Altura de Corte:** {alto_c:.2f} m")
                     
-                    st.markdown(f"**Altura de Corte:** {alto_corte:.2f} m")
-                    
-                    # Lógica de cálculo interna para la tabla
-                    if cortina["apertura"] == "Central":
-                        v_izq = cortina["ancho_pano_izq"] + (sol_m if cortina["pano_solapa"] == "Izquierda" else 0)
-                        v_der = cortina["ancho_pano_der"] + (sol_m if cortina["pano_solapa"] == "Derecha" else 0)
-                        t_izq, p_izq, b_izq = obtener_estructura_pano(v_izq)
-                        t_der, p_der, b_der = obtener_estructura_pano(v_der)
-                        c_izq = b_izq + (p_izq * pico_m)
-                        c_der = b_der + (p_der * pico_m)
-                        st.write(f"Paño Izq: {c_izq:.3f}m | Paño Der: {c_der:.3f}m")
-                    else:
-                        t, p, b = obtener_estructura_pano(cortina["ancho_riel"])
-                        c_tot = b + (p * pico_m)
-                        st.write(f"Corte Total: {c_tot:.3f}m")
-
-                    if st.button("🗑️ Eliminar Cortina", key=f"del_{i}_{j}"):
+                    if st.button("🗑️ Quitar cortina", key=f"del_{i}_{j}"):
                         tela["cortinas"].pop(j); guardar(); st.rerun()
 
     if st.button("💾 GUARDAR TODO"):
-        guardar(); st.success("¡Guardado!")
+        guardar(); st.success("Datos guardados.")
 
 # =====================================================
-# BLOQUE 2: TALLER (TOTALMENTE NUEVO)
+# BLOQUE 2: MODO COSTURERO
 # =====================================================
 with tab2:
-    st.markdown('<div class="main-title">📍 Guía para el Costurero</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-title">🧵 Guía de Taller</div>', unsafe_allow_html=True)
     if not st.session_state.data["telas"]:
-        st.warning("Sin datos.")
+        st.warning("Cargá datos en el Bloque 1.")
     else:
-        l_idx = st.selectbox("Lote", range(len(st.session_state.data["telas"])), format_func=lambda x: st.session_state.data["telas"][x]["nombre"])
+        l_idx = st.selectbox("Elegir Lote", range(len(st.session_state.data["telas"])), format_func=lambda x: st.session_state.data["telas"][x]["nombre"])
         tela_s = st.session_state.data["telas"][l_idx]
         p_m = calcular_pico_maestro_lote(tela_s)
         
         if tela_s["cortinas"]:
-            c_idx = st.selectbox("Ambiente", range(len(tela_s["cortinas"])), format_func=lambda x: tela_s["cortinas"][x]["ambiente"])
-            cort = tela_s["cortinas"][c_idx]
-            alto_c = cort["alto_terminado"] + (cort.get("cabezal",22)/100) + (cort.get("ruedo",5)/100)
+            c_idx = st.selectbox("Elegir Ambiente", range(len(tela_s["cortinas"])), format_func=lambda x: tela_s["cortinas"][x]["ambiente"])
+            c_s = tela_s["cortinas"][c_idx]
             
-            # Preparación de datos taller
+            # Altura calculada para el taller
+            a_corte = c_s["alto_terminado"] + (c_s.get("cabezal", 22)/100) + (c_s.get("ruedo", 5)/100)
+            
+            # Lógica de paños
             sl_m = (tela_s["solapa_cm"]/100)
-            p_list = []
-            if cort["apertura"] == "Central":
-                v_i = cort["ancho_pano_izq"] + (sl_m if cort["pano_solapa"] == "Izquierda" else 0)
-                v_d = cort["ancho_pano_der"] + (sl_m if cort["pano_solapa"] == "Derecha" else 0)
-                ti, pi, bi = obtener_estructura_pano(v_i)
-                td, pd, bd = obtener_estructura_pano(v_d)
-                p_list.append({"n": "PAÑO IZQUIERDO", "c": bi+(pi*p_m), "t": ti, "p": pi})
-                p_list.append({"n": "PAÑO DERECHO", "c": bd+(pd*p_m), "t": td, "p": pd})
+            panos = []
+            if c_s["apertura"] == "Central":
+                v_izq = c_s["ancho_pano_izq"] + (sl_m if c_s["pano_solapa"] == "Izquierda" else 0)
+                v_der = c_s["ancho_pano_der"] + (sl_m if c_s["pano_solapa"] == "Derecha" else 0)
+                t1, p1, b1 = obtener_estructura_pano(v_izq)
+                t2, p2, b2 = obtener_estructura_pano(v_der)
+                panos.append({"n": "PAÑO IZQUIERDO", "c": b1+(p1*p_m), "t": t1, "p": p1})
+                panos.append({"n": "PAÑO DERECHO", "c": b2+(p2*p_m), "t": t2, "p": p2})
             else:
-                tt, pt, bt = obtener_estructura_pano(cort["ancho_riel"])
-                p_list.append({"n": "PAÑO ÚNICO", "c": bt+(pt*p_m), "t": tt, "p": pt})
+                t, p, b = obtener_estructura_pano(c_s["ancho_riel"])
+                panos.append({"n": "PAÑO ÚNICO", "c": b+(p*p_m), "t": t, "p": p})
 
-            for det in p_list:
+            for pn in panos:
                 st.markdown(f"""
                 <div class="card-taller">
-                    <h2 style="margin:0; color:#1e40af;">{det['n']}</h2>
-                    <p><b>ALTO DE CORTE: {alto_c:.2f} m</b> (Cabezal: {cort.get('cabezal')}cm, Ruedo: {cort.get('ruedo')}cm)</p>
+                    <h2 style="margin:0; color:#1e40af;">{pn['n']}</h2>
+                    <p style="font-size:18px;"><b>ALTO DE CORTE: {a_corte:.2f} m</b></p>
                     <hr>
-                    <p><b>1. CORTE DE ANCHO:</b> <span class="big-num">{det['c']:.3f} m</span></p>
-                    <p><b>2. CONTROL POST-DOBLADILLO:</b> La tela debe medir <span class="medida-verificacion">{(det['c'] - 0.08):.2f} m</span></p>
+                    <p><b>1. CORTE DE ANCHO:</b> <span class="big-num">{pn['c']:.3f} m</span></p>
+                    <p><b>2. CONTROL POST-DOBLADILLO:</b> Medir <span class="medida-verificacion">{(pn['c'] - 0.08):.2f} m</span></p>
                     <div style="background:#fff7ed; padding:10px; border-radius:8px; border:1px solid #fdba74; margin-top:10px;">
                         <b>3. ENTABLADO:</b> Empezar y terminar con <b>TABLA</b>.<br>
-                        • <b>{det['t']}</b> Tablas de 10 cm | • <b>{det['p']}</b> Picos de {p_m*100:.2f} cm
+                        • <b>{pn['t']}</b> Tablas de 10 cm | • <b>{pn['p']}</b> Picos de {p_m*100:.2f} cm
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
