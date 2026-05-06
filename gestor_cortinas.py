@@ -169,6 +169,108 @@ def tablas_y_picos(medida_visible_m):
     return tablas, picos
 
 
+def estructura_panos_cortina(cortina, solapa_cm):
+    """
+    Fórmula nueva, sin tocar estructura visual:
+    arma la estructura rígida de cada paño del lote.
+
+    Estructura rígida = ancho visible del paño + dobladillos.
+    La solapa se suma solamente si hay cruce real entre paños.
+    Los picos se cuentan por paño.
+    """
+    normalizar_cortina(cortina)
+
+    apertura = cortina.get("apertura", "Central")
+    ancho_riel = float(cortina.get("ancho_riel", 0.0))
+    hay_cruce = bool(cortina.get("hay_cruce", apertura == "Central"))
+    solapa_m = solapa_cm / 100 if hay_solapa_real(apertura, hay_cruce) else 0
+
+    panos = []
+
+    if apertura == "Central":
+        ancho_izq = float(cortina.get("ancho_pano_izq", ancho_riel / 2))
+        ancho_der = float(cortina.get("ancho_pano_der", ancho_riel / 2))
+        pano_solapa = cortina.get("pano_solapa", "Derecha")
+
+        visible_izq = ancho_izq
+        visible_der = ancho_der
+
+        if solapa_m > 0:
+            if pano_solapa == "Izquierda":
+                visible_izq += solapa_m
+            else:
+                visible_der += solapa_m
+
+        tablas_izq, picos_izq = tablas_y_picos(visible_izq)
+        tablas_der, picos_der = tablas_y_picos(visible_der)
+
+        panos.append({
+            "lado": "Izquierda",
+            "visible": visible_izq,
+            "trabajo": visible_izq + DOBLADILLO_TOTAL_M,
+            "tablas": tablas_izq,
+            "picos": picos_izq
+        })
+
+        panos.append({
+            "lado": "Derecha",
+            "visible": visible_der,
+            "trabajo": visible_der + DOBLADILLO_TOTAL_M,
+            "tablas": tablas_der,
+            "picos": picos_der
+        })
+
+    else:
+        visible = ancho_riel
+        tablas, picos = tablas_y_picos(visible)
+
+        panos.append({
+            "lado": apertura,
+            "visible": visible,
+            "trabajo": visible + DOBLADILLO_TOTAL_M,
+            "tablas": tablas,
+            "picos": picos
+        })
+
+    return panos
+
+
+def calcular_pico_maestro_lote(tela):
+    """
+    Fórmula jerárquica del lote:
+
+    Pico maestro = (metros recibidos - estructura rígida total) / picos totales.
+
+    Se calcula una sola vez por tela/lote y se aplica a todas las cortinas
+    de ese lote para que el dibujo del cabezal sea parejo.
+    """
+    metros_recibidos = float(tela.get("metros_recibidos", 0.0))
+    solapa_cm = float(tela.get("solapa_cm", SOLAPA_DEFAULT_CM))
+
+    estructura_total = 0.0
+    picos_totales = 0
+
+    for cortina in tela.get("cortinas", []):
+        for pano in estructura_panos_cortina(cortina, solapa_cm):
+            estructura_total += float(pano["trabajo"])
+            picos_totales += int(pano["picos"])
+
+    if picos_totales <= 0 or metros_recibidos <= 0:
+        pico_maestro_cm = None
+        excedente_m = 0.0
+    else:
+        excedente_m = metros_recibidos - estructura_total
+        pico_maestro_cm = (excedente_m * 100) / picos_totales
+
+    return {
+        "metros_recibidos": metros_recibidos,
+        "estructura_total": estructura_total,
+        "picos_totales": picos_totales,
+        "excedente_m": excedente_m,
+        "pico_maestro_cm": pico_maestro_cm
+    }
+
+
 def base_consumo_cortina(cortina, solapa_cm):
     apertura = cortina.get("apertura", "Central")
     hay_cruce = cortina.get("hay_cruce", apertura == "Central")
@@ -209,7 +311,7 @@ def fruncido_maximo_parejo(tela):
 # CÁLCULO DE CORTE
 # =====================================================
 
-def calcular_central(cortina, solapa_cm, metraje_asignado):
+def calcular_central(cortina, solapa_cm, metraje_asignado, pico_maestro_cm=None):
     ancho_riel = float(cortina["ancho_riel"])
     ancho_izq = float(cortina.get("ancho_pano_izq", ancho_riel / 2))
     ancho_der = float(cortina.get("ancho_pano_der", ancho_riel / 2))
@@ -231,23 +333,31 @@ def calcular_central(cortina, solapa_cm, metraje_asignado):
     trabajo_der = visible_der + DOBLADILLO_TOTAL_M
     base_total = trabajo_izq + trabajo_der
 
-    if base_total <= 0:
-        fruncido_real = 0
-        corte_izq = 0
-        corte_der = 0
-    else:
-        fruncido_real = metraje_asignado / base_total
-        corte_izq = trabajo_izq * fruncido_real
-        corte_der = trabajo_der * fruncido_real
-
     tablas_izq, picos_izq = tablas_y_picos(visible_izq)
     tablas_der, picos_der = tablas_y_picos(visible_der)
 
-    excedente_izq = corte_izq - trabajo_izq
-    excedente_der = corte_der - trabajo_der
+    if pico_maestro_cm is not None:
+        pico_izq = pico_maestro_cm
+        pico_der = pico_maestro_cm
+        corte_izq = trabajo_izq + ((pico_maestro_cm * picos_izq) / 100)
+        corte_der = trabajo_der + ((pico_maestro_cm * picos_der) / 100)
+        total_corte_calculado = corte_izq + corte_der
+        fruncido_real = total_corte_calculado / base_total if base_total > 0 else 0
+    else:
+        if base_total <= 0:
+            fruncido_real = 0
+            corte_izq = 0
+            corte_der = 0
+        else:
+            fruncido_real = metraje_asignado / base_total
+            corte_izq = trabajo_izq * fruncido_real
+            corte_der = trabajo_der * fruncido_real
 
-    pico_izq = (excedente_izq * 100) / picos_izq if picos_izq > 0 else 0
-    pico_der = (excedente_der * 100) / picos_der if picos_der > 0 else 0
+        excedente_izq = corte_izq - trabajo_izq
+        excedente_der = corte_der - trabajo_der
+
+        pico_izq = (excedente_izq * 100) / picos_izq if picos_izq > 0 else 0
+        pico_der = (excedente_der * 100) / picos_der if picos_der > 0 else 0
 
     return {
         "tipo": "Central",
@@ -277,22 +387,27 @@ def calcular_central(cortina, solapa_cm, metraje_asignado):
     }
 
 
-def calcular_un_pano(cortina, metraje_asignado):
+def calcular_un_pano(cortina, metraje_asignado, pico_maestro_cm=None):
     ancho_riel = float(cortina["ancho_riel"])
     apertura = cortina.get("apertura", "Lateral")
 
     visible = ancho_riel
     trabajo = visible + DOBLADILLO_TOTAL_M
 
-    if trabajo <= 0:
-        fruncido_real = 0
-    else:
-        fruncido_real = metraje_asignado / trabajo
-
     tablas, picos = tablas_y_picos(visible)
 
-    excedente = metraje_asignado - trabajo
-    pico = (excedente * 100) / picos if picos > 0 else 0
+    if pico_maestro_cm is not None:
+        pico = pico_maestro_cm
+        metraje_asignado = trabajo + ((pico_maestro_cm * picos) / 100)
+        fruncido_real = metraje_asignado / trabajo if trabajo > 0 else 0
+    else:
+        if trabajo <= 0:
+            fruncido_real = 0
+        else:
+            fruncido_real = metraje_asignado / trabajo
+
+        excedente = metraje_asignado - trabajo
+        pico = (excedente * 100) / picos if picos > 0 else 0
 
     return {
         "tipo": apertura,
@@ -562,6 +677,9 @@ def mostrar_hoja_cortina(cortina, tela, fruncido_uniforme):
 
     metraje_asignado = float(cortina.get("metraje_asignado", metraje_teorico))
 
+    datos_lote = calcular_pico_maestro_lote(tela)
+    pico_maestro_cm = datos_lote.get("pico_maestro_cm")
+
     st.markdown(f"### 🪟 {cortina['ambiente']}")
 
     c1, c2, c3, c4 = st.columns(4)
@@ -582,7 +700,7 @@ def mostrar_hoja_cortina(cortina, tela, fruncido_uniforme):
         """, unsafe_allow_html=True)
 
     if cortina["apertura"] == "Central":
-        res = calcular_central(cortina, tela["solapa_cm"], metraje_asignado)
+        res = calcular_central(cortina, tela["solapa_cm"], metraje_asignado, pico_maestro_cm)
 
         suma_panos = res["ancho_izq_sobre_riel"] + res["ancho_der_sobre_riel"]
 
@@ -645,7 +763,7 @@ def mostrar_hoja_cortina(cortina, tela, fruncido_uniforme):
             )
 
     else:
-        res = calcular_un_pano(cortina, metraje_asignado)
+        res = calcular_un_pano(cortina, metraje_asignado, pico_maestro_cm)
         panel_un_pano(res)
 
 
@@ -987,7 +1105,23 @@ else:
             </div>
             """, unsafe_allow_html=True)
 
+        datos_lote = calcular_pico_maestro_lote(tela)
+        pico_maestro = datos_lote.get("pico_maestro_cm")
+
         st.info(f"Fruncido máximo parejo posible para todo este lote: {fruncido_max:.2f}")
+
+        if pico_maestro is not None:
+            st.info(
+                f"Pico maestro del lote: {pico_maestro:.2f} cm | "
+                f"Estructura rígida total: {datos_lote['estructura_total']:.2f} m | "
+                f"Picos totales: {datos_lote['picos_totales']}"
+            )
+
+            if pico_maestro <= 5:
+                st.warning(
+                    "⚠️ Pico maestro bajo. Para este lote, la tela puede no alcanzar "
+                    "para mantener un pico estético."
+                )
 
 
 # =====================================================
