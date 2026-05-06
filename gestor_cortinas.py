@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import json
 from pathlib import Path
 from datetime import date
@@ -28,70 +29,59 @@ PANOS_SOLAPA = ["Izquierda", "Derecha"]
 
 
 # =====================================================
-# ESTILO VISUAL
+# ESTILO GENERAL STREAMLIT
 # =====================================================
 
 st.markdown("""
 <style>
-    .main-title {
-        font-size: 34px;
-        font-weight: 800;
-        color: #1f2937;
-        margin-bottom: 0px;
-    }
-    .subtitle {
-        font-size: 16px;
-        color: #6b7280;
-        margin-bottom: 25px;
-    }
-    .important-box {
-        padding: 16px;
-        border-radius: 12px;
-        background-color: #fff7ed;
-        border: 1px solid #fed7aa;
-        color: #7c2d12;
-        font-weight: 600;
-        margin-top: 10px;
-        margin-bottom: 15px;
-    }
-    .ok-box {
-        padding: 16px;
-        border-radius: 12px;
-        background-color: #ecfdf5;
-        border: 1px solid #a7f3d0;
-        color: #065f46;
-        font-weight: 600;
-        margin-bottom: 15px;
-    }
-    .danger-box {
-        padding: 16px;
-        border-radius: 12px;
-        background-color: #fef2f2;
-        border: 1px solid #fecaca;
-        color: #991b1b;
-        font-weight: 700;
-        margin-bottom: 15px;
-    }
-    .info-box {
-        padding: 16px;
-        border-radius: 12px;
-        background-color: #eff6ff;
-        border: 1px solid #bfdbfe;
-        color: #1e3a8a;
-        font-weight: 600;
-        margin-bottom: 15px;
-    }
-    .workshop-box {
-        padding: 18px;
-        border-radius: 14px;
-        background-color: #f8fafc;
-        border: 1px solid #cbd5e1;
-        color: #0f172a;
-        margin-top: 12px;
-        margin-bottom: 15px;
-        font-size: 16px;
-        line-height: 1.55;
-    }
+.main-title {
+    font-size: 34px;
+    font-weight: 800;
+    color: #1f2937;
+    margin-bottom: 0px;
+}
+.subtitle {
+    font-size: 16px;
+    color: #6b7280;
+    margin-bottom: 25px;
+}
+.important-box {
+    padding: 16px;
+    border-radius: 12px;
+    background-color: #fff7ed;
+    border: 1px solid #fed7aa;
+    color: #7c2d12;
+    font-weight: 600;
+    margin-top: 10px;
+    margin-bottom: 15px;
+}
+.ok-box {
+    padding: 16px;
+    border-radius: 12px;
+    background-color: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #065f46;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+.danger-box {
+    padding: 16px;
+    border-radius: 12px;
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+.info-box {
+    padding: 16px;
+    border-radius: 12px;
+    background-color: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e3a8a;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -135,7 +125,7 @@ def resetear_todo():
 
 
 def normalizar_cortina(cortina):
-
+    cortina.setdefault("ambiente", "Cortina")
     cortina.setdefault("tipo_trabajo", "Vertical")
     cortina.setdefault("apertura", "Central")
     cortina.setdefault("ancho_riel", 2.40)
@@ -166,12 +156,10 @@ cargar_backup()
 # =====================================================
 
 def hay_solapa_real(apertura, hay_cruce):
-
     return apertura == "Central" and bool(hay_cruce)
 
 
 def tablas_y_picos(medida_visible_m):
-
     tablas = round((medida_visible_m * 100) / SEPARACION_TABLAS_CM)
 
     if tablas < 2:
@@ -182,13 +170,11 @@ def tablas_y_picos(medida_visible_m):
 
 
 def base_consumo_cortina(cortina, solapa_cm):
-
     apertura = cortina.get("apertura", "Central")
     hay_cruce = cortina.get("hay_cruce", apertura == "Central")
     ancho_riel = float(cortina.get("ancho_riel", 0.0))
 
     solapa_m = (solapa_cm / 100) if hay_solapa_real(apertura, hay_cruce) else 0
-
     return ancho_riel + solapa_m + DOBLADILLO_TOTAL_M
 
 
@@ -224,12 +210,12 @@ def fruncido_maximo_parejo(tela):
 # =====================================================
 
 def calcular_central(cortina, solapa_cm, metraje_asignado):
-
     ancho_riel = float(cortina["ancho_riel"])
     ancho_izq = float(cortina.get("ancho_pano_izq", ancho_riel / 2))
     ancho_der = float(cortina.get("ancho_pano_der", ancho_riel / 2))
     hay_cruce = bool(cortina.get("hay_cruce", True))
     pano_solapa = cortina.get("pano_solapa", "Derecha")
+
     solapa_m = solapa_cm / 100 if hay_solapa_real("Central", hay_cruce) else 0
 
     visible_izq = ancho_izq
@@ -292,7 +278,6 @@ def calcular_central(cortina, solapa_cm, metraje_asignado):
 
 
 def calcular_un_pano(cortina, metraje_asignado):
-
     ancho_riel = float(cortina["ancho_riel"])
     apertura = cortina.get("apertura", "Lateral")
 
@@ -324,16 +309,227 @@ def calcular_un_pano(cortina, metraje_asignado):
 
 
 # =====================================================
-# BLOQUES DE AYUDA
+# HTML VISUAL COSTURERO
+# =====================================================
+
+def render_html(html, height=500):
+    components.html(html, height=height, scrolling=False)
+
+
+def css_costurero():
+    return """
+    <style>
+    body {
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+        background: transparent;
+    }
+    .costurero-panel {
+        background: #f8fafc;
+        border: 3px solid #0f172a;
+        border-radius: 18px;
+        padding: 22px;
+        box-shadow: 0px 6px 18px rgba(15, 23, 42, 0.15);
+        color: #0f172a;
+    }
+    .costurero-titulo {
+        font-size: 26px;
+        font-weight: 900;
+        text-align: center;
+        margin-bottom: 10px;
+        letter-spacing: 0.5px;
+    }
+    .costurero-subtitulo {
+        font-size: 18px;
+        font-weight: 800;
+        text-align: center;
+        color: #334155;
+        margin-bottom: 18px;
+    }
+    .costurero-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+    }
+    .costurero-card {
+        background: white;
+        border: 2px solid #cbd5e1;
+        border-radius: 16px;
+        padding: 16px;
+        text-align: center;
+    }
+    .icono {
+        font-size: 34px;
+        margin-bottom: 8px;
+    }
+    .label {
+        font-size: 13px;
+        font-weight: 800;
+        color: #475569;
+    }
+    .valor {
+        font-size: 30px;
+        font-weight: 900;
+        color: #111827;
+        margin-top: 6px;
+    }
+    .costurero-detalle {
+        margin-top: 18px;
+        background: #ffffff;
+        border: 2px dashed #94a3b8;
+        border-radius: 14px;
+        padding: 16px;
+        color: #0f172a;
+        font-size: 17px;
+        line-height: 1.6;
+    }
+    .costurero-alerta {
+        margin-top: 18px;
+        background: #fff7ed;
+        border: 2px solid #fb923c;
+        border-radius: 14px;
+        padding: 14px;
+        color: #7c2d12;
+        font-weight: 900;
+        text-align: center;
+        font-size: 18px;
+    }
+    .costurero-error {
+        margin-top: 18px;
+        background: #fef2f2;
+        border: 2px solid #ef4444;
+        border-radius: 14px;
+        padding: 14px;
+        color: #991b1b;
+        font-weight: 900;
+        text-align: center;
+        font-size: 18px;
+    }
+    @media (max-width: 900px) {
+        .costurero-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    </style>
+    """
+
+
+def panel_un_pano(res):
+    html = f"""
+    {css_costurero()}
+    <div class="costurero-panel">
+        <div class="costurero-titulo">✂️ HOJA DE CORTE PARA COSTURERO</div>
+        <div class="costurero-subtitulo">Apertura: {res['tipo']} | Un solo paño</div>
+
+        <div class="costurero-grid">
+            <div class="costurero-card">
+                <div class="icono">✂️</div>
+                <div class="label">CORTE TOTAL</div>
+                <div class="valor">{res['corte_total']:.2f} m</div>
+            </div>
+            <div class="costurero-card">
+                <div class="icono">📏</div>
+                <div class="label">ANCHO VISIBLE</div>
+                <div class="valor">{res['visible']:.2f} m</div>
+            </div>
+            <div class="costurero-card">
+                <div class="icono">🧵</div>
+                <div class="label">TABLAS</div>
+                <div class="valor">{res['tablas']}</div>
+            </div>
+            <div class="costurero-card">
+                <div class="icono">🔺</div>
+                <div class="label">PICOS / PINZAS</div>
+                <div class="valor">{res['picos']}</div>
+            </div>
+        </div>
+
+        <div class="costurero-detalle">
+            <b>📌 Datos indispensables:</b><br>
+            Ancho técnico con dobladillos: <b>{res['trabajo']:.2f} m</b><br>
+            Separación tabla a tabla: <b>{res['separacion_cm']} cm</b><br>
+            Profundidad de cada pico / pinza: <b>{res['pico']:.2f} cm</b><br>
+            Fruncido real: <b>{res['fruncido_real']:.2f}</b>
+        </div>
+
+        <div class="costurero-alerta">
+            ⚠️ El dobladillo NO suma tablas. La primera y última tabla ya lo absorben.
+        </div>
+    </div>
+    """
+    render_html(html, height=430)
+
+
+def panel_pano(nombre, corte, visible, tecnico, tablas, picos, separacion, pico, fruncido, lleva_solapa):
+    html = f"""
+    {css_costurero()}
+    <div class="costurero-panel">
+        <div class="costurero-titulo">✂️ HOJA DE CORTE - {nombre.upper()}</div>
+        <div class="costurero-subtitulo">¿Lleva solapa?: {lleva_solapa}</div>
+
+        <div class="costurero-grid">
+            <div class="costurero-card">
+                <div class="icono">✂️</div>
+                <div class="label">CORTE DEL PAÑO</div>
+                <div class="valor">{corte:.2f} m</div>
+            </div>
+            <div class="costurero-card">
+                <div class="icono">📏</div>
+                <div class="label">ANCHO VISIBLE</div>
+                <div class="valor">{visible:.2f} m</div>
+            </div>
+            <div class="costurero-card">
+                <div class="icono">🧵</div>
+                <div class="label">TABLAS</div>
+                <div class="valor">{tablas}</div>
+            </div>
+            <div class="costurero-card">
+                <div class="icono">🔺</div>
+                <div class="label">PICOS / PINZAS</div>
+                <div class="valor">{picos}</div>
+            </div>
+        </div>
+
+        <div class="costurero-detalle">
+            <b>📌 Datos indispensables:</b><br>
+            Ancho técnico con dobladillos: <b>{tecnico:.2f} m</b><br>
+            Separación tabla a tabla: <b>{separacion} cm</b><br>
+            Profundidad de cada pico / pinza: <b>{pico:.2f} cm</b><br>
+            Fruncido real: <b>{fruncido:.2f}</b>
+        </div>
+
+        <div class="costurero-alerta">
+            ⚠️ No agregar tablas por dobladillo. La solapa cuenta solo si hay cruce.
+        </div>
+    </div>
+    """
+    render_html(html, height=430)
+
+
+def panel_error(texto):
+    html = f"""
+    {css_costurero()}
+    <div class="costurero-error">
+        🚨 {texto}
+    </div>
+    """
+    render_html(html, height=100)
+
+
+# =====================================================
+# VISUALIZACIÓN DE CORTINA
 # =====================================================
 
 def bloque_reglas_costurero(cortina):
-
     apertura = cortina.get("apertura", "Central")
     tipo_trabajo = cortina.get("tipo_trabajo", "Vertical")
     hay_cruce = cortina.get("hay_cruce", apertura == "Central")
 
-    solapa_texto = "SÍ lleva solapa porque hay cruce entre paños." if hay_solapa_real(apertura, hay_cruce) else "NO lleva solapa porque no hay cruce entre paños."
+    solapa_texto = (
+        "SÍ lleva solapa porque hay cruce entre paños."
+        if hay_solapa_real(apertura, hay_cruce)
+        else "NO lleva solapa porque no hay cruce entre paños."
+    )
 
     st.markdown(f"""
     <div class="important-box">
@@ -351,12 +547,7 @@ def bloque_reglas_costurero(cortina):
     """, unsafe_allow_html=True)
 
 
-# =====================================================
-# VISUALIZACIÓN
-# =====================================================
-
 def mostrar_hoja_cortina(cortina, tela, fruncido_uniforme):
-
     normalizar_cortina(cortina)
 
     alto_corte = float(cortina["alto_terminado"]) + (
@@ -381,76 +572,81 @@ def mostrar_hoja_cortina(cortina, tela, fruncido_uniforme):
 
     bloque_reglas_costurero(cortina)
 
-    if cortina["apertura"] == "Central":
-
-        res = calcular_central(cortina, tela["solapa_cm"], metraje_asignado)
-
-        st.success(
-            f"Total tablas: {res['total_tablas']} | "
-            f"Total picos: {res['total_picos']} | "
-            f"Separación fija: {res['separacion_cm']} cm"
-        )
-
-        tab_izq, tab_der = st.tabs(["Paño izquierdo", "Paño derecho"])
-
-        with tab_izq:
-            st.markdown(f"""
-            <div class="workshop-box">
-                <b>PAÑO IZQUIERDO</b><br><br>
-
-                Medida sobre riel: <b>{res['ancho_izq_sobre_riel']:.2f} m</b><br>
-                Ancho visible: <b>{res['visible_izq']:.2f} m</b><br>
-                Ancho técnico: <b>{res['trabajo_izq']:.2f} m</b><br>
-                Corte asignado: <b>{res['corte_izq']:.2f} m</b><br><br>
-
-                Cantidad de tablas: <b>{res['tablas_izq']}</b><br>
-                Cantidad de picos: <b>{res['picos_izq']}</b><br>
-                Separación tabla a tabla: <b>{res['separacion_cm']} cm</b><br>
-                Profundidad del pico: <b>{res['pico_izq']:.2f} cm</b>
-            </div>
-            """, unsafe_allow_html=True)
-
-        with tab_der:
-            st.markdown(f"""
-            <div class="workshop-box">
-                <b>PAÑO DERECHO</b><br><br>
-
-                Medida sobre riel: <b>{res['ancho_der_sobre_riel']:.2f} m</b><br>
-                Ancho visible: <b>{res['visible_der']:.2f} m</b><br>
-                Ancho técnico: <b>{res['trabajo_der']:.2f} m</b><br>
-                Corte asignado: <b>{res['corte_der']:.2f} m</b><br><br>
-
-                Cantidad de tablas: <b>{res['tablas_der']}</b><br>
-                Cantidad de picos: <b>{res['picos_der']}</b><br>
-                Separación tabla a tabla: <b>{res['separacion_cm']} cm</b><br>
-                Profundidad del pico: <b>{res['pico_der']:.2f} cm</b>
-            </div>
-            """, unsafe_allow_html=True)
-
-    else:
-
-        res = calcular_un_pano(cortina, metraje_asignado)
-
-        st.success(
-            f"Tablas: {res['tablas']} | "
-            f"Picos: {res['picos']} | "
-            f"Separación fija: {res['separacion_cm']} cm"
-        )
-
-        st.markdown(f"""
-        <div class="workshop-box">
-            <b>INSTRUCCIÓN PARA COSTURERO</b><br><br>
-
-            Ancho visible: <b>{res['visible']:.2f} m</b><br>
-            Ancho técnico: <b>{res['trabajo']:.2f} m</b><br>
-            Corte total: <b>{res['corte_total']:.2f} m</b><br><br>
-
-            Cantidad de tablas: <b>{res['tablas']}</b><br>
-            Cantidad de picos: <b>{res['picos']}</b><br>
-            Separación tabla a tabla: <b>{res['separacion_cm']} cm</b><br>
-            Profundidad del pico: <b>{res['pico']:.2f} cm</b>
+    if cortina["tipo_trabajo"] == "Apaisado":
+        st.markdown("""
+        <div class="info-box">
+            📐 TRABAJO APAISADO:<br>
+            Verificar orientación del dibujo, trama, pelo o brillo antes de cortar.
+            La solapa se aplica igual: solo si hay cruce entre paños.
         </div>
         """, unsafe_allow_html=True)
+
+    if cortina["apertura"] == "Central":
+        res = calcular_central(cortina, tela["solapa_cm"], metraje_asignado)
+
+        suma_panos = res["ancho_izq_sobre_riel"] + res["ancho_der_sobre_riel"]
+
+        if abs(suma_panos - res["ancho_riel"]) > 0.01:
+            panel_error(
+                f"ATENCIÓN: La suma de paños es {suma_panos:.2f} m, "
+                f"pero el riel mide {res['ancho_riel']:.2f} m. Revisar antes de cortar."
+            )
+
+        st.markdown(f"""
+        <div class="ok-box">
+            ✅ RESUMEN CENTRAL<br>
+            Total tablas: <b>{res['total_tablas']}</b> |
+            Total picos / pinzas: <b>{res['total_picos']}</b> |
+            Separación fija: <b>{res['separacion_cm']} cm</b><br>
+            Paño con solapa: <b>{res['pano_solapa'] if res['hay_cruce'] else 'No corresponde'}</b>
+        </div>
+        """, unsafe_allow_html=True)
+
+        tab_izq, tab_der = st.tabs(["✂️ Paño izquierdo", "✂️ Paño derecho"])
+
+        with tab_izq:
+            lleva_solapa = (
+                "SÍ"
+                if res["hay_cruce"] and res["pano_solapa"] == "Izquierda"
+                else "NO"
+            )
+
+            panel_pano(
+                "Paño izquierdo",
+                res["corte_izq"],
+                res["visible_izq"],
+                res["trabajo_izq"],
+                res["tablas_izq"],
+                res["picos_izq"],
+                res["separacion_cm"],
+                res["pico_izq"],
+                res["fruncido_real"],
+                lleva_solapa
+            )
+
+        with tab_der:
+            lleva_solapa = (
+                "SÍ"
+                if res["hay_cruce"] and res["pano_solapa"] == "Derecha"
+                else "NO"
+            )
+
+            panel_pano(
+                "Paño derecho",
+                res["corte_der"],
+                res["visible_der"],
+                res["trabajo_der"],
+                res["tablas_der"],
+                res["picos_der"],
+                res["separacion_cm"],
+                res["pico_der"],
+                res["fruncido_real"],
+                lleva_solapa
+            )
+
+    else:
+        res = calcular_un_pano(cortina, metraje_asignado)
+        panel_un_pano(res)
 
 
 # =====================================================
@@ -497,6 +693,11 @@ with col_c:
         value=st.session_state.data.get("fecha", str(date.today()))
     )
 
+st.session_state.data["observaciones"] = st.text_area(
+    "Observaciones generales",
+    value=st.session_state.data.get("observaciones", "")
+)
+
 guardar_backup()
 
 st.divider()
@@ -505,7 +706,6 @@ col_btn1, col_btn2 = st.columns([1, 4])
 
 with col_btn1:
     if st.button("➕ Agregar tela / lote"):
-
         st.session_state.data["telas"].append({
             "nombre": f"Tela {len(st.session_state.data['telas']) + 1}",
             "color": "",
@@ -522,12 +722,11 @@ with col_btn2:
     if st.button("🗑️ Borrar toda la orden"):
         resetear_todo()
 
+
 if not st.session_state.data["telas"]:
     st.info("Agregá una tela/lote para empezar.")
 else:
-
     for i, tela in enumerate(st.session_state.data["telas"]):
-
         st.markdown(f"## 📦 Tela / Lote {i + 1}")
 
         c1, c2, c3, c4 = st.columns(4)
@@ -574,7 +773,6 @@ else:
 
         with x2:
             if st.button("➕ Agregar cortina", key=f"agregar_cortina_{i}"):
-
                 tela["cortinas"].append({
                     "ambiente": f"Cortina {len(tela['cortinas']) + 1}",
                     "ancho_riel": 2.40,
@@ -596,14 +794,12 @@ else:
         st.markdown("### 🪟 Cortinas")
 
         for j, cortina in enumerate(tela["cortinas"]):
-
             normalizar_cortina(cortina)
 
             with st.expander(
                 f"🪟 {cortina.get('ambiente', 'Cortina')}",
                 expanded=True
             ):
-
                 a1, a2, a3, a4 = st.columns(4)
 
                 with a1:
@@ -679,7 +875,6 @@ else:
                     )
 
                 if cortina["apertura"] == "Central":
-
                     st.markdown("#### ⚖️ Distribución de paños")
 
                     p1, p2, p3, p4 = st.columns(4)
@@ -715,6 +910,11 @@ else:
                                 index=0 if cortina["pano_solapa"] == "Izquierda" else 1,
                                 key=f"solapa_pano_{i}_{j}"
                             )
+                        else:
+                            st.info("Sin cruce: no se aplica solapa.")
+
+                else:
+                    cortina["hay_cruce"] = False
 
                 mostrar_hoja_cortina(
                     cortina,
@@ -730,7 +930,65 @@ else:
                     guardar_backup()
                     st.rerun()
 
+                guardar_backup()
+
         st.divider()
+
+
+# =====================================================
+# RESUMEN GENERAL
+# =====================================================
+
+st.markdown("## 📊 Resumen general por tela")
+
+if not st.session_state.data["telas"]:
+    st.info("No hay telas cargadas.")
+else:
+    for i, tela in enumerate(st.session_state.data["telas"]):
+        nombre_tela = tela.get("nombre", f"Tela {i + 1}")
+        color_tela = tela.get("color", "")
+
+        metros_recibidos = float(tela.get("metros_recibidos", 0.0))
+        fruncido_deseado = float(tela.get("fruncido_deseado", 2.2))
+
+        total_necesario = total_metraje_tela(tela, fruncido_deseado)
+        total_asignado = sum(
+            float(c.get("metraje_asignado", 0.0))
+            for c in tela["cortinas"]
+        )
+        sobrante_asignado = metros_recibidos - total_asignado
+        fruncido_max = fruncido_maximo_parejo(tela)
+
+        st.markdown(f"### 📦 {nombre_tela} {f'- {color_tela}' if color_tela else ''}")
+
+        r1, r2, r3, r4 = st.columns(4)
+
+        r1.metric("Metros recibidos", f"{metros_recibidos:.2f} m")
+        r2.metric("Necesario teórico", f"{total_necesario:.2f} m")
+        r3.metric("Total asignado", f"{total_asignado:.2f} m")
+        r4.metric("Sobrante real", f"{sobrante_asignado:.2f} m")
+
+        if not tela["cortinas"]:
+            st.warning("Esta tela todavía no tiene cortinas cargadas.")
+            continue
+
+        if metros_recibidos <= 0:
+            st.warning("Cargá los metros recibidos para validar si alcanza.")
+        elif sobrante_asignado >= 0:
+            st.markdown("""
+            <div class="ok-box">
+                ✅ La tela alcanza según el metraje asignado a cada cortina.
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown("""
+            <div class="danger-box">
+                ⚠️ La tela NO alcanza. Estás asignando más metros de los recibidos.
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.info(f"Fruncido máximo parejo posible para todo este lote: {fruncido_max:.2f}")
+
 
 # =====================================================
 # RESPALDO
@@ -741,7 +999,6 @@ st.markdown("## 💾 Respaldo")
 guardar_backup()
 
 if ARCHIVO_BACKUP.exists():
-
     with open(ARCHIVO_BACKUP, "r", encoding="utf-8") as f:
         contenido = f.read()
 
