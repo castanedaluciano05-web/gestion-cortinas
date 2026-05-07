@@ -1021,13 +1021,19 @@ def bloque_medidas_pano(nombre, corte, tecnico, visible, tablas, picos, profundi
 
 
 def bloque_pasos_pano(nombre, corte, tecnico, visible, profundidad_pico):
+    # PASO 3 corregido:
+    # Luego de cortar y hacer dobladillo de 4 cm por lado,
+    # la medida de control de dobladillo a dobladillo es el corte total menos 8 cm.
+    # No se usa el ancho técnico en este paso, porque el control se hace sobre la tela cortada sin entablar.
+    medida_control_dobladillo = max(float(corte) - DOBLADILLO_TOTAL_M, 0)
+
     pasos = [
         ("✂️ PASO 1", f"Cortar la tela a {formato_m_cm(corte)}.", ""),
         ("🧵 PASO 2", f"Realizar dobladillo de {DOBLADILLO_LATERAL_CM} cm por lado.", ""),
         (
             "📏 PASO 3",
             "Medir desde el inicio de un dobladillo hasta el otro extremo del dobladillo.",
-            f"Si la tela tiene {formato_m_cm(tecnico)}, continuar con el paso 4."
+            f"Si la tela tiene {formato_m_cm(medida_control_dobladillo)}, continuar con el paso 4."
         ),
         (
             "📐 PASO 4",
