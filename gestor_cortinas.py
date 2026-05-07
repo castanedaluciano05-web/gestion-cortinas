@@ -3,6 +3,7 @@ import streamlit.components.v1 as components
 import json
 from pathlib import Path
 from datetime import date
+from textwrap import dedent
 
 # =====================================================
 # CONFIGURACIÓN GENERAL
@@ -767,380 +768,877 @@ def mostrar_hoja_cortina(cortina, tela, fruncido_uniforme):
         panel_un_pano(res)
 
 
+
+
+# =====================================================
+# BLOQUE 2 - COSTURA / TALLER
+# =====================================================
+
+if "vista" not in st.session_state:
+    st.session_state.vista = "BLOQUE_1"
+
+
+def formato_m_cm(valor_m):
+    valor_m = float(valor_m)
+    return f"{valor_m:.2f} m ({valor_m * 100:.0f} cm)"
+
+
+def mensaje_taller(i, j):
+    mensajes = [
+        "🌟 Hola Romina y Bianca. Vamos paso a paso: esta cortina va a quedar impecable.",
+        "🧵 Romina y Bianca, tranquilidad y precisión. La hoja está preparada para trabajar seguras.",
+        "✨ Buen trabajo, Romina y Bianca. Midiendo con calma, todo sale prolijo.",
+        "💪 Romina y Bianca, confíen en su mano de obra. Revisen cada paso y avancen seguras.",
+        "👏 Equipo de costura: gracias por la dedicación de siempre. Hoy también sale un trabajo excelente.",
+        "📏 Romina y Bianca: medida exacta, costura prolija y resultado profesional. Vamos con todo."
+    ]
+    return mensajes[(int(i) + int(j)) % len(mensajes)]
+
+
+def estilo_bloque_taller():
+    st.markdown("""
+    <style>
+    .taller-saludo {
+        background: linear-gradient(135deg, #fff7ed 0%, #fffbeb 100%);
+        border: 1px solid #fed7aa;
+        border-radius: 18px;
+        padding: 18px 22px;
+        margin: 10px 0 16px 0;
+        color: #7c2d12;
+        font-size: 22px;
+        font-weight: 850;
+        line-height: 1.35;
+        box-shadow: 0 6px 16px rgba(124, 45, 18, 0.08);
+    }
+    .taller-encabezado {
+        background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+        border: 1px solid #c7d2fe;
+        border-radius: 22px;
+        padding: 20px 24px;
+        margin-bottom: 14px;
+        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+    }
+    .taller-titulo {
+        font-size: 32px;
+        font-weight: 900;
+        color: #111827;
+        margin-bottom: 4px;
+        letter-spacing: 0.2px;
+    }
+    .taller-subtitulo {
+        font-size: 18px;
+        color: #475569;
+        font-weight: 750;
+    }
+    .taller-regla {
+        background: #ecfdf5;
+        border: 1px solid #a7f3d0;
+        color: #065f46;
+        border-radius: 16px;
+        padding: 13px 16px;
+        font-size: 18px;
+        font-weight: 800;
+        margin-bottom: 12px;
+        line-height: 1.35;
+    }
+    .taller-alerta-apaisado {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1e3a8a;
+        border-radius: 16px;
+        padding: 13px 16px;
+        font-size: 18px;
+        font-weight: 800;
+        margin-bottom: 12px;
+        line-height: 1.35;
+    }
+    .taller-seccion {
+        background: #ffffff;
+        border: 1px solid #dbeafe;
+        border-radius: 20px;
+        padding: 18px;
+        margin: 14px 0;
+        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.07);
+    }
+    .taller-seccion-titulo {
+        font-size: 24px;
+        font-weight: 900;
+        color: #0f172a;
+        margin-bottom: 14px;
+    }
+    .taller-grid-horizontal {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+    }
+    .taller-medidas-grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 10px;
+    }
+    .taller-mini-card {
+        background: #f8fafc;
+        border: 1px solid #cbd5e1;
+        border-radius: 16px;
+        padding: 14px 12px;
+        min-height: 88px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: center;
+    }
+    .taller-mini-label {
+        color: #475569;
+        font-size: 12px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        margin-bottom: 7px;
+    }
+    .taller-mini-valor {
+        color: #111827;
+        font-size: 20px;
+        font-weight: 950;
+        line-height: 1.18;
+    }
+    .taller-pasos-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 12px;
+    }
+    .taller-paso-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-top: 7px solid #334155;
+        border-radius: 18px;
+        padding: 16px 14px;
+        min-height: 210px;
+        box-shadow: 0 5px 14px rgba(15, 23, 42, 0.06);
+    }
+    .taller-paso-numero {
+        color: #334155;
+        font-size: 17px;
+        font-weight: 950;
+        margin-bottom: 9px;
+        letter-spacing: 0.4px;
+    }
+    .taller-paso-texto {
+        color: #111827;
+        font-size: 20px;
+        font-weight: 850;
+        line-height: 1.25;
+    }
+    .taller-paso-texto small {
+        display: block;
+        margin-top: 8px;
+        color: #475569;
+        font-size: 16px;
+        font-weight: 750;
+        line-height: 1.25;
+    }
+    .control-rapido {
+        background: #f8fafc;
+        border: 1px solid #cbd5e1;
+        border-radius: 14px;
+        padding: 12px 14px;
+        color: #0f172a;
+        font-weight: 750;
+        margin: 10px 0 12px 0;
+    }
+    .control-rapido-ok {
+        border-color: #a7f3d0;
+        background: #ecfdf5;
+        color: #065f46;
+    }
+    .control-rapido-error {
+        border-color: #fecaca;
+        background: #fef2f2;
+        color: #991b1b;
+    }
+    @media (max-width: 1200px) {
+        .taller-medidas-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .taller-pasos-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 760px) {
+        .taller-grid-horizontal { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .taller-medidas-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .taller-pasos-grid { grid-template-columns: 1fr; }
+        .taller-titulo { font-size: 27px; }
+        .taller-saludo { font-size: 19px; }
+        .taller-mini-valor { font-size: 18px; }
+        .taller-paso-texto { font-size: 19px; }
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+
+def _card(label, value):
+    return dedent(f"""
+    <div class="taller-mini-card">
+        <div class="taller-mini-label">{label}</div>
+        <div class="taller-mini-valor">{value}</div>
+    </div>
+    """).strip()
+
+
+def bloque_tarjetas(titulo, tarjetas, clase_grid="taller-grid-horizontal"):
+    html = f"""
+    <div class="taller-seccion">
+        <div class="taller-seccion-titulo">{titulo}</div>
+        <div class="{clase_grid}">
+            {''.join(_card(label, value) for label, value in tarjetas)}
+        </div>
+    </div>
+    """
+    st.markdown(dedent(html).strip(), unsafe_allow_html=True)
+
+
+def bloque_datos_generales(cliente, telefono, fecha, tela, cortina):
+    tarjetas = [
+        ("Cliente", cliente if cliente else "Sin cargar"),
+        ("Teléfono", telefono if telefono else "Sin cargar"),
+        ("Fecha", fecha if fecha else "Sin cargar"),
+        ("Tela", tela.get("nombre", "Tela")),
+        ("Color", tela.get("color", "Sin cargar") if tela.get("color", "") else "Sin cargar"),
+        ("Ambiente", cortina.get("ambiente", "Cortina")),
+        ("Trabajo", cortina.get("tipo_trabajo", "Vertical")),
+        ("Apertura", cortina.get("apertura", "Central")),
+    ]
+    bloque_tarjetas("📋 Datos de cliente y cortina", tarjetas)
+
+
+def bloque_medidas_pano(nombre, corte, tecnico, visible, tablas, picos, profundidad_pico, lleva_solapa):
+    tarjetas = [
+        ("Corte", formato_m_cm(corte)),
+        ("Ancho técnico", formato_m_cm(tecnico)),
+        ("Medida visible", formato_m_cm(visible)),
+        ("Tablas", f"{tablas}"),
+        ("Picos", f"{picos}"),
+        ("Profundidad del pico", f"{profundidad_pico:.2f} cm"),
+        ("Solapa", lleva_solapa),
+    ]
+    bloque_tarjetas(f"📏 Medidas de trabajo - {nombre}", tarjetas, "taller-medidas-grid")
+
+
+def bloque_pasos_pano(nombre, corte, tecnico, visible, profundidad_pico):
+    pasos = [
+        ("✂️ PASO 1", f"Cortar la tela a {formato_m_cm(corte)}.", ""),
+        ("🧵 PASO 2", f"Realizar dobladillo de {DOBLADILLO_LATERAL_CM} cm por lado.", ""),
+        (
+            "📏 PASO 3",
+            "Medir desde el inicio de un dobladillo hasta el otro extremo del dobladillo.",
+            f"Si la tela tiene {formato_m_cm(tecnico)}, continuar con el paso 4."
+        ),
+        (
+            "📐 PASO 4",
+            f"Entablar con tablas de {SEPARACION_TABLAS_CM} cm y picos de {profundidad_pico:.2f} cm de profundidad.",
+            ""
+        ),
+        ("✅ PASO 5", f"Medir la cortina y verificar que posee {formato_m_cm(visible)} de medida visible.", ""),
+    ]
+
+    cards = ""
+    for numero, texto, detalle in pasos:
+        detalle_html = f"<small>{detalle}</small>" if detalle else ""
+        cards += dedent(f"""
+        <div class="taller-paso-card">
+            <div class="taller-paso-numero">{numero}</div>
+            <div class="taller-paso-texto">{texto}{detalle_html}</div>
+        </div>
+        """).strip()
+
+    html = f"""
+    <div class="taller-seccion">
+        <div class="taller-seccion-titulo">🧵 Paso a paso - {nombre}</div>
+        <div class="taller-pasos-grid">{cards}</div>
+    </div>
+    """
+    st.markdown(dedent(html).strip(), unsafe_allow_html=True)
+
+
+def control_rapido_cortina(cortina, tela):
+    """Control mínimo para BLOQUE 1. No modifica datos ni fórmulas."""
+    normalizar_cortina(cortina)
+    apertura = cortina.get("apertura", "Central")
+    hay_cruce = bool(cortina.get("hay_cruce", apertura == "Central"))
+    solapa = "Sí" if hay_solapa_real(apertura, hay_cruce) else "No"
+
+    if apertura == "Central":
+        ancho_riel = float(cortina.get("ancho_riel", 0.0))
+        izq = float(cortina.get("ancho_pano_izq", 0.0))
+        der = float(cortina.get("ancho_pano_der", 0.0))
+        suma = izq + der
+        if abs(suma - ancho_riel) > 0.01:
+            st.markdown(
+                f"""
+                <div class="control-rapido control-rapido-error">
+                    ⚠️ Control rápido: la suma de paños es <b>{suma:.2f} m</b>, pero el riel mide <b>{ancho_riel:.2f} m</b>. Revisar antes de enviar a taller.
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        else:
+            st.markdown(
+                f"""
+                <div class="control-rapido control-rapido-ok">
+                    ✅ Control rápido: riel <b>{ancho_riel:.2f} m</b> | paños <b>{izq:.2f} + {der:.2f} m</b> | cruce: <b>{'Sí' if hay_cruce else 'No'}</b> | solapa: <b>{solapa}</b>.
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+    else:
+        st.markdown(
+            f"""
+            <div class="control-rapido control-rapido-ok">
+                ✅ Control rápido: apertura <b>{apertura}</b> | un solo paño | solapa: <b>No</b>.
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+
+def mostrar_bloque_taller():
+    estilo_bloque_taller()
+
+    if st.button("⬅️ Volver al BLOQUE 1 - Carga de orden"):
+        st.session_state.vista = "BLOQUE_1"
+        st.rerun()
+
+    i = st.session_state.get("tela_seleccionada", None)
+    j = st.session_state.get("cortina_seleccionada", None)
+
+    if i is None or j is None:
+        st.warning("No hay una cortina seleccionada para taller. Volvé al BLOQUE 1 y elegí una cortina.")
+        return
+
+    try:
+        tela = st.session_state.data["telas"][int(i)]
+        cortina = tela["cortinas"][int(j)]
+    except Exception:
+        st.error("No se pudo encontrar la cortina seleccionada. Volvé al BLOQUE 1 y seleccioná nuevamente.")
+        return
+
+    normalizar_cortina(cortina)
+
+    alto_corte = float(cortina["alto_terminado"]) + (
+        (float(cortina["cabezal_cm"]) + float(cortina["ruedo_cm"])) / 100
+    )
+
+    metraje_teorico = calcular_metraje_cortina(
+        cortina,
+        tela["solapa_cm"],
+        tela["fruncido_deseado"]
+    )
+    metraje_asignado = float(cortina.get("metraje_asignado", metraje_teorico))
+
+    datos_lote = calcular_pico_maestro_lote(tela)
+    pico_maestro_cm = datos_lote.get("pico_maestro_cm")
+
+    apertura = cortina.get("apertura", "Central")
+    hay_cruce = bool(cortina.get("hay_cruce", apertura == "Central"))
+    lleva_solapa_real = hay_solapa_real(apertura, hay_cruce)
+    solapa_real_texto = (
+        f"SÍ, {float(tela.get('solapa_cm', SOLAPA_DEFAULT_CM)):.0f} cm"
+        if lleva_solapa_real
+        else "NO"
+    )
+
+    st.markdown(
+        f"""
+        <div class="taller-saludo">{mensaje_taller(i, j)}</div>
+        <div class="taller-encabezado">
+            <div class="taller-titulo">🧵 BLOQUE 2 - COSTURA / TALLER</div>
+            <div class="taller-subtitulo">Vista individual de trabajo: {cortina.get('ambiente', 'Cortina')}</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        """
+        <div class="taller-regla">
+            ✅ Regla de oro: la solapa NO depende de si el trabajo es vertical o apaisado. La solapa depende solamente de si hay cruce entre paños.
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    if cortina.get("tipo_trabajo", "Vertical") == "Apaisado":
+        st.markdown(
+            """
+            <div class="taller-alerta-apaisado">
+                📐 Atención trabajo apaisado: verificar orientación del dibujo, trama, pelo o brillo antes de cortar. Esta advertencia no modifica la regla de solapa.
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    bloque_datos_generales(
+        st.session_state.data.get("cliente", ""),
+        st.session_state.data.get("telefono", ""),
+        st.session_state.data.get("fecha", ""),
+        tela,
+        cortina
+    )
+
+    if apertura == "Central":
+        res = calcular_central(cortina, tela["solapa_cm"], metraje_asignado, pico_maestro_cm)
+
+        suma_panos = res["ancho_izq_sobre_riel"] + res["ancho_der_sobre_riel"]
+        if abs(suma_panos - res["ancho_riel"]) > 0.01:
+            st.error(
+                f"ATENCIÓN: La suma de paños es {suma_panos:.2f} m, pero el riel mide {res['ancho_riel']:.2f} m. Revisar antes de cortar."
+            )
+
+        tab_izq, tab_der = st.tabs(["✂️ Paño izquierdo", "✂️ Paño derecho"])
+
+        with tab_izq:
+            lleva_solapa = "SÍ" if res["hay_cruce"] and res["pano_solapa"] == "Izquierda" else "NO"
+            bloque_medidas_pano(
+                "Paño izquierdo",
+                res["corte_izq"],
+                res["trabajo_izq"],
+                res["visible_izq"],
+                res["tablas_izq"],
+                res["picos_izq"],
+                res["pico_izq"],
+                lleva_solapa
+            )
+            bloque_pasos_pano(
+                "Paño izquierdo",
+                res["corte_izq"],
+                res["trabajo_izq"],
+                res["visible_izq"],
+                res["pico_izq"]
+            )
+
+        with tab_der:
+            lleva_solapa = "SÍ" if res["hay_cruce"] and res["pano_solapa"] == "Derecha" else "NO"
+            bloque_medidas_pano(
+                "Paño derecho",
+                res["corte_der"],
+                res["trabajo_der"],
+                res["visible_der"],
+                res["tablas_der"],
+                res["picos_der"],
+                res["pico_der"],
+                lleva_solapa
+            )
+            bloque_pasos_pano(
+                "Paño derecho",
+                res["corte_der"],
+                res["trabajo_der"],
+                res["visible_der"],
+                res["pico_der"]
+            )
+
+    else:
+        res = calcular_un_pano(cortina, metraje_asignado, pico_maestro_cm)
+        bloque_medidas_pano(
+            "Paño único",
+            res["corte_total"],
+            res["trabajo"],
+            res["visible"],
+            res["tablas"],
+            res["picos"],
+            res["pico"],
+            solapa_real_texto
+        )
+        bloque_pasos_pano(
+            "Paño único",
+            res["corte_total"],
+            res["trabajo"],
+            res["visible"],
+            res["pico"]
+        )
+
+
 # =====================================================
 # INTERFAZ
 # =====================================================
 
-st.markdown(
-    '<div class="main-title">🧵 CastaMuebles - Gestión Textil Pro</div>',
-    unsafe_allow_html=True
-)
-
-st.markdown(
-    '<div class="subtitle">Sistema desarrollado por CASTAÑEDA Luciano.</div>',
-    unsafe_allow_html=True
-)
-
-st.markdown("""
-<div class="important-box">
-    REGLA DE ORO:<br>
-    La solapa no depende de si el trabajo es apaisado o vertical.<br>
-    La solapa depende de si hay cruce entre paños.
-</div>
-""", unsafe_allow_html=True)
-
-st.markdown("## 🧾 Datos del cliente")
-
-col_a, col_b, col_c = st.columns(3)
-
-with col_a:
-    st.session_state.data["cliente"] = st.text_input(
-        "Cliente",
-        value=st.session_state.data.get("cliente", "")
-    )
-
-with col_b:
-    st.session_state.data["telefono"] = st.text_input(
-        "Teléfono",
-        value=st.session_state.data.get("telefono", "")
-    )
-
-with col_c:
-    st.session_state.data["fecha"] = st.text_input(
-        "Fecha",
-        value=st.session_state.data.get("fecha", str(date.today()))
-    )
-
-st.session_state.data["observaciones"] = st.text_area(
-    "Observaciones generales",
-    value=st.session_state.data.get("observaciones", "")
-)
-
-guardar_backup()
-
-st.divider()
-
-col_btn1, col_btn2 = st.columns([1, 4])
-
-with col_btn1:
-    if st.button("➕ Agregar tela / lote"):
-        st.session_state.data["telas"].append({
-            "nombre": f"Tela {len(st.session_state.data['telas']) + 1}",
-            "color": "",
-            "metros_recibidos": 0.0,
-            "fruncido_deseado": 2.2,
-            "solapa_cm": SOLAPA_DEFAULT_CM,
-            "cortinas": []
-        })
-
-        guardar_backup()
-        st.rerun()
-
-with col_btn2:
-    if st.button("🗑️ Borrar toda la orden"):
-        resetear_todo()
-
-
-if not st.session_state.data["telas"]:
-    st.info("Agregá una tela/lote para empezar.")
+if st.session_state.get("vista") == "COSTURA_TALLER":
+    mostrar_bloque_taller()
 else:
-    for i, tela in enumerate(st.session_state.data["telas"]):
-        st.markdown(f"## 📦 Tela / Lote {i + 1}")
 
-        c1, c2, c3, c4 = st.columns(4)
 
-        with c1:
-            tela["nombre"] = st.text_input(
-                "Nombre tela",
-                value=tela.get("nombre", ""),
-                key=f"nombre_tela_{i}"
-            )
+    st.markdown(
+        '<div class="main-title">🧵 CastaMuebles - Gestión Textil Pro</div>',
+        unsafe_allow_html=True
+    )
 
-        with c2:
-            tela["color"] = st.text_input(
-                "Color",
-                value=tela.get("color", ""),
-                key=f"color_tela_{i}"
-            )
+    st.markdown(
+        '<div class="subtitle">Sistema desarrollado por CASTAÑEDA Luciano.</div>',
+        unsafe_allow_html=True
+    )
 
-        with c3:
-            tela["metros_recibidos"] = st.number_input(
-                "Metros recibidos",
-                value=float(tela.get("metros_recibidos", 0.0)),
-                step=0.10,
-                key=f"metros_tela_{i}"
-            )
+    st.markdown("""
+    <div class="important-box">
+        REGLA DE ORO:<br>
+        La solapa no depende de si el trabajo es apaisado o vertical.<br>
+        La solapa depende de si hay cruce entre paños.
+    </div>
+    """, unsafe_allow_html=True)
 
-        with c4:
-            tela["fruncido_deseado"] = st.number_input(
-                "Fruncido deseado",
-                value=float(tela.get("fruncido_deseado", 2.2)),
-                step=0.10,
-                key=f"fruncido_tela_{i}"
-            )
+    st.markdown("## 🧾 Datos del cliente")
 
-        x1, x2 = st.columns(2)
+    col_a, col_b, col_c = st.columns(3)
 
-        with x1:
-            tela["solapa_cm"] = st.number_input(
-                "Solapa / cruce cm",
-                value=int(tela.get("solapa_cm", SOLAPA_DEFAULT_CM)),
-                step=1,
-                key=f"solapa_tela_{i}"
-            )
+    with col_a:
+        st.session_state.data["cliente"] = st.text_input(
+            "Cliente",
+            value=st.session_state.data.get("cliente", "")
+        )
 
-        with x2:
-            if st.button("➕ Agregar cortina", key=f"agregar_cortina_{i}"):
-                tela["cortinas"].append({
-                    "ambiente": f"Cortina {len(tela['cortinas']) + 1}",
-                    "ancho_riel": 2.40,
-                    "alto_terminado": 2.51,
-                    "tipo_trabajo": "Vertical",
-                    "apertura": "Central",
-                    "cabezal_cm": CABEZAL_DEFAULT_CM,
-                    "ruedo_cm": RUEDO_DEFAULT_CM,
-                    "metraje_asignado": 0.0,
-                    "ancho_pano_izq": 1.20,
-                    "ancho_pano_der": 1.20,
-                    "hay_cruce": True,
-                    "pano_solapa": "Derecha"
-                })
+    with col_b:
+        st.session_state.data["telefono"] = st.text_input(
+            "Teléfono",
+            value=st.session_state.data.get("telefono", "")
+        )
 
-                guardar_backup()
-                st.rerun()
+    with col_c:
+        st.session_state.data["fecha"] = st.text_input(
+            "Fecha",
+            value=st.session_state.data.get("fecha", str(date.today()))
+        )
 
-        st.markdown("### 🪟 Cortinas")
+    st.session_state.data["observaciones"] = st.text_area(
+        "Observaciones generales",
+        value=st.session_state.data.get("observaciones", "")
+    )
 
-        for j, cortina in enumerate(tela["cortinas"]):
-            normalizar_cortina(cortina)
+    guardar_backup()
 
-            with st.expander(
-                f"🪟 {cortina.get('ambiente', 'Cortina')}",
-                expanded=True
-            ):
-                a1, a2, a3, a4 = st.columns(4)
+    st.divider()
 
-                with a1:
-                    cortina["ambiente"] = st.text_input(
-                        "Ambiente",
-                        value=cortina.get("ambiente", ""),
-                        key=f"ambiente_{i}_{j}"
-                    )
+    col_btn1, col_btn2 = st.columns([1, 4])
 
-                    cortina["ancho_riel"] = st.number_input(
-                        "Ancho riel",
-                        value=float(cortina.get("ancho_riel", 2.40)),
-                        step=0.01,
-                        key=f"ancho_{i}_{j}"
-                    )
+    with col_btn1:
+        if st.button("➕ Agregar tela / lote"):
+            st.session_state.data["telas"].append({
+                "nombre": f"Tela {len(st.session_state.data['telas']) + 1}",
+                "color": "",
+                "metros_recibidos": 0.0,
+                "fruncido_deseado": 2.2,
+                "solapa_cm": SOLAPA_DEFAULT_CM,
+                "cortinas": []
+            })
 
-                with a2:
-                    cortina["alto_terminado"] = st.number_input(
-                        "Alto terminado",
-                        value=float(cortina.get("alto_terminado", 2.51)),
-                        step=0.01,
-                        key=f"alto_{i}_{j}"
-                    )
+            guardar_backup()
+            st.rerun()
 
-                    cortina["tipo_trabajo"] = st.selectbox(
-                        "Trabajo",
-                        TIPOS_TRABAJO,
-                        index=TIPOS_TRABAJO.index(
-                            cortina.get("tipo_trabajo", "Vertical")
-                        ),
-                        key=f"tipo_{i}_{j}"
-                    )
+    with col_btn2:
+        if st.button("🗑️ Borrar toda la orden"):
+            resetear_todo()
 
-                with a3:
-                    cortina["apertura"] = st.selectbox(
-                        "Apertura",
-                        APERTURAS,
-                        index=APERTURAS.index(
-                            cortina.get("apertura", "Central")
-                        ),
-                        key=f"apertura_{i}_{j}"
-                    )
 
-                    cortina["cabezal_cm"] = st.number_input(
-                        "Cabezal",
-                        value=int(cortina.get("cabezal_cm", CABEZAL_DEFAULT_CM)),
-                        step=1,
-                        key=f"cabezal_{i}_{j}"
-                    )
+    if not st.session_state.data["telas"]:
+        st.info("Agregá una tela/lote para empezar.")
+    else:
+        for i, tela in enumerate(st.session_state.data["telas"]):
+            st.markdown(f"## 📦 Tela / Lote {i + 1}")
 
-                with a4:
-                    cortina["ruedo_cm"] = st.number_input(
-                        "Ruedo",
-                        value=int(cortina.get("ruedo_cm", RUEDO_DEFAULT_CM)),
-                        step=1,
-                        key=f"ruedo_{i}_{j}"
-                    )
+            c1, c2, c3, c4 = st.columns(4)
 
-                    metraje_sugerido = calcular_metraje_cortina(
-                        cortina,
-                        tela["solapa_cm"],
-                        tela["fruncido_deseado"]
-                    )
-
-                    if float(cortina.get("metraje_asignado", 0.0)) <= 0:
-                        cortina["metraje_asignado"] = round(metraje_sugerido, 2)
-
-                    cortina["metraje_asignado"] = st.number_input(
-                        "Metraje asignado",
-                        value=float(cortina["metraje_asignado"]),
-                        step=0.01,
-                        key=f"metraje_{i}_{j}"
-                    )
-
-                if cortina["apertura"] == "Central":
-                    st.markdown("#### ⚖️ Distribución de paños")
-
-                    p1, p2, p3, p4 = st.columns(4)
-
-                    with p1:
-                        cortina["ancho_pano_izq"] = st.number_input(
-                            "Paño izquierdo",
-                            value=float(cortina["ancho_pano_izq"]),
-                            step=0.01,
-                            key=f"izq_{i}_{j}"
-                        )
-
-                    with p2:
-                        cortina["ancho_pano_der"] = st.number_input(
-                            "Paño derecho",
-                            value=float(cortina["ancho_pano_der"]),
-                            step=0.01,
-                            key=f"der_{i}_{j}"
-                        )
-
-                    with p3:
-                        cortina["hay_cruce"] = st.checkbox(
-                            "Hay cruce",
-                            value=bool(cortina["hay_cruce"]),
-                            key=f"cruce_{i}_{j}"
-                        )
-
-                    with p4:
-                        if cortina["hay_cruce"]:
-                            cortina["pano_solapa"] = st.selectbox(
-                                "Paño con solapa",
-                                PANOS_SOLAPA,
-                                index=0 if cortina["pano_solapa"] == "Izquierda" else 1,
-                                key=f"solapa_pano_{i}_{j}"
-                            )
-                        else:
-                            st.info("Sin cruce: no se aplica solapa.")
-
-                else:
-                    cortina["hay_cruce"] = False
-
-                mostrar_hoja_cortina(
-                    cortina,
-                    tela,
-                    tela["fruncido_deseado"]
+            with c1:
+                tela["nombre"] = st.text_input(
+                    "Nombre tela",
+                    value=tela.get("nombre", ""),
+                    key=f"nombre_tela_{i}"
                 )
 
-                if st.button(
-                    "🗑️ Eliminar cortina",
-                    key=f"eliminar_{i}_{j}"
-                ):
-                    tela["cortinas"].pop(j)
+            with c2:
+                tela["color"] = st.text_input(
+                    "Color",
+                    value=tela.get("color", ""),
+                    key=f"color_tela_{i}"
+                )
+
+            with c3:
+                tela["metros_recibidos"] = st.number_input(
+                    "Metros recibidos",
+                    value=float(tela.get("metros_recibidos", 0.0)),
+                    step=0.10,
+                    key=f"metros_tela_{i}"
+                )
+
+            with c4:
+                tela["fruncido_deseado"] = st.number_input(
+                    "Fruncido deseado",
+                    value=float(tela.get("fruncido_deseado", 2.2)),
+                    step=0.10,
+                    key=f"fruncido_tela_{i}"
+                )
+
+            x1, x2 = st.columns(2)
+
+            with x1:
+                tela["solapa_cm"] = st.number_input(
+                    "Solapa / cruce cm",
+                    value=int(tela.get("solapa_cm", SOLAPA_DEFAULT_CM)),
+                    step=1,
+                    key=f"solapa_tela_{i}"
+                )
+
+            with x2:
+                if st.button("➕ Agregar cortina", key=f"agregar_cortina_{i}"):
+                    tela["cortinas"].append({
+                        "ambiente": f"Cortina {len(tela['cortinas']) + 1}",
+                        "ancho_riel": 2.40,
+                        "alto_terminado": 2.51,
+                        "tipo_trabajo": "Vertical",
+                        "apertura": "Central",
+                        "cabezal_cm": CABEZAL_DEFAULT_CM,
+                        "ruedo_cm": RUEDO_DEFAULT_CM,
+                        "metraje_asignado": 0.0,
+                        "ancho_pano_izq": 1.20,
+                        "ancho_pano_der": 1.20,
+                        "hay_cruce": True,
+                        "pano_solapa": "Derecha"
+                    })
+
                     guardar_backup()
                     st.rerun()
 
-                guardar_backup()
+            st.markdown("### 🪟 Cortinas")
 
-        st.divider()
+            for j, cortina in enumerate(tela["cortinas"]):
+                normalizar_cortina(cortina)
+
+                with st.expander(
+                    f"🪟 {cortina.get('ambiente', 'Cortina')}",
+                    expanded=True
+                ):
+                    a1, a2, a3, a4 = st.columns(4)
+
+                    with a1:
+                        cortina["ambiente"] = st.text_input(
+                            "Ambiente",
+                            value=cortina.get("ambiente", ""),
+                            key=f"ambiente_{i}_{j}"
+                        )
+
+                        cortina["ancho_riel"] = st.number_input(
+                            "Ancho riel",
+                            value=float(cortina.get("ancho_riel", 2.40)),
+                            step=0.01,
+                            key=f"ancho_{i}_{j}"
+                        )
+
+                    with a2:
+                        cortina["alto_terminado"] = st.number_input(
+                            "Alto terminado",
+                            value=float(cortina.get("alto_terminado", 2.51)),
+                            step=0.01,
+                            key=f"alto_{i}_{j}"
+                        )
+
+                        cortina["tipo_trabajo"] = st.selectbox(
+                            "Trabajo",
+                            TIPOS_TRABAJO,
+                            index=TIPOS_TRABAJO.index(
+                                cortina.get("tipo_trabajo", "Vertical")
+                            ),
+                            key=f"tipo_{i}_{j}"
+                        )
+
+                    with a3:
+                        cortina["apertura"] = st.selectbox(
+                            "Apertura",
+                            APERTURAS,
+                            index=APERTURAS.index(
+                                cortina.get("apertura", "Central")
+                            ),
+                            key=f"apertura_{i}_{j}"
+                        )
+
+                        cortina["cabezal_cm"] = st.number_input(
+                            "Cabezal",
+                            value=int(cortina.get("cabezal_cm", CABEZAL_DEFAULT_CM)),
+                            step=1,
+                            key=f"cabezal_{i}_{j}"
+                        )
+
+                    with a4:
+                        cortina["ruedo_cm"] = st.number_input(
+                            "Ruedo",
+                            value=int(cortina.get("ruedo_cm", RUEDO_DEFAULT_CM)),
+                            step=1,
+                            key=f"ruedo_{i}_{j}"
+                        )
+
+                        metraje_sugerido = calcular_metraje_cortina(
+                            cortina,
+                            tela["solapa_cm"],
+                            tela["fruncido_deseado"]
+                        )
+
+                        if float(cortina.get("metraje_asignado", 0.0)) <= 0:
+                            cortina["metraje_asignado"] = round(metraje_sugerido, 2)
+
+                        cortina["metraje_asignado"] = st.number_input(
+                            "Metraje asignado",
+                            value=float(cortina["metraje_asignado"]),
+                            step=0.01,
+                            key=f"metraje_{i}_{j}"
+                        )
+
+                    if cortina["apertura"] == "Central":
+                        st.markdown("#### ⚖️ Distribución de paños")
+
+                        p1, p2, p3, p4 = st.columns(4)
+
+                        with p1:
+                            cortina["ancho_pano_izq"] = st.number_input(
+                                "Paño izquierdo",
+                                value=float(cortina["ancho_pano_izq"]),
+                                step=0.01,
+                                key=f"izq_{i}_{j}"
+                            )
+
+                        with p2:
+                            cortina["ancho_pano_der"] = st.number_input(
+                                "Paño derecho",
+                                value=float(cortina["ancho_pano_der"]),
+                                step=0.01,
+                                key=f"der_{i}_{j}"
+                            )
+
+                        with p3:
+                            cortina["hay_cruce"] = st.checkbox(
+                                "Hay cruce",
+                                value=bool(cortina["hay_cruce"]),
+                                key=f"cruce_{i}_{j}"
+                            )
+
+                        with p4:
+                            if cortina["hay_cruce"]:
+                                cortina["pano_solapa"] = st.selectbox(
+                                    "Paño con solapa",
+                                    PANOS_SOLAPA,
+                                    index=0 if cortina["pano_solapa"] == "Izquierda" else 1,
+                                    key=f"solapa_pano_{i}_{j}"
+                                )
+                            else:
+                                st.info("Sin cruce: no se aplica solapa.")
+
+                    else:
+                        cortina["hay_cruce"] = False
+
+                    st.markdown("---")
+
+                    if st.button(
+                        "🧵 Fabricar esta cortina / Ir a COSTURA - TALLER",
+                        key=f"fabricar_taller_{i}_{j}"
+                    ):
+                        st.session_state.tela_seleccionada = i
+                        st.session_state.cortina_seleccionada = j
+                        st.session_state.vista = "COSTURA_TALLER"
+                        st.rerun()
+
+                    control_rapido_cortina(cortina, tela)
+
+                    if st.button(
+                        "🗑️ Eliminar cortina",
+                        key=f"eliminar_{i}_{j}"
+                    ):
+                        tela["cortinas"].pop(j)
+                        guardar_backup()
+                        st.rerun()
+
+                    guardar_backup()
+
+            st.divider()
 
 
-# =====================================================
-# RESUMEN GENERAL
-# =====================================================
+    # =====================================================
+    # RESUMEN GENERAL
+    # =====================================================
 
-st.markdown("## 📊 Resumen general por tela")
+    st.markdown("## 📊 Resumen general por tela")
 
-if not st.session_state.data["telas"]:
-    st.info("No hay telas cargadas.")
-else:
-    for i, tela in enumerate(st.session_state.data["telas"]):
-        nombre_tela = tela.get("nombre", f"Tela {i + 1}")
-        color_tela = tela.get("color", "")
+    if not st.session_state.data["telas"]:
+        st.info("No hay telas cargadas.")
+    else:
+        for i, tela in enumerate(st.session_state.data["telas"]):
+            nombre_tela = tela.get("nombre", f"Tela {i + 1}")
+            color_tela = tela.get("color", "")
 
-        metros_recibidos = float(tela.get("metros_recibidos", 0.0))
-        fruncido_deseado = float(tela.get("fruncido_deseado", 2.2))
+            metros_recibidos = float(tela.get("metros_recibidos", 0.0))
+            fruncido_deseado = float(tela.get("fruncido_deseado", 2.2))
 
-        total_necesario = total_metraje_tela(tela, fruncido_deseado)
-        total_asignado = sum(
-            float(c.get("metraje_asignado", 0.0))
-            for c in tela["cortinas"]
-        )
-        sobrante_asignado = metros_recibidos - total_asignado
-        fruncido_max = fruncido_maximo_parejo(tela)
-
-        st.markdown(f"### 📦 {nombre_tela} {f'- {color_tela}' if color_tela else ''}")
-
-        r1, r2, r3, r4 = st.columns(4)
-
-        r1.metric("Metros recibidos", f"{metros_recibidos:.2f} m")
-        r2.metric("Necesario teórico", f"{total_necesario:.2f} m")
-        r3.metric("Total asignado", f"{total_asignado:.2f} m")
-        r4.metric("Sobrante real", f"{sobrante_asignado:.2f} m")
-
-        if not tela["cortinas"]:
-            st.warning("Esta tela todavía no tiene cortinas cargadas.")
-            continue
-
-        if metros_recibidos <= 0:
-            st.warning("Cargá los metros recibidos para validar si alcanza.")
-        elif sobrante_asignado >= 0:
-            st.markdown("""
-            <div class="ok-box">
-                ✅ La tela alcanza según el metraje asignado a cada cortina.
-            </div>
-            """, unsafe_allow_html=True)
-        else:
-            st.markdown("""
-            <div class="danger-box">
-                ⚠️ La tela NO alcanza. Estás asignando más metros de los recibidos.
-            </div>
-            """, unsafe_allow_html=True)
-
-        datos_lote = calcular_pico_maestro_lote(tela)
-        pico_maestro = datos_lote.get("pico_maestro_cm")
-
-        st.info(f"Fruncido máximo parejo posible para todo este lote: {fruncido_max:.2f}")
-
-        if pico_maestro is not None:
-            st.info(
-                f"Pico maestro del lote: {pico_maestro:.2f} cm | "
-                f"Estructura rígida total: {datos_lote['estructura_total']:.2f} m | "
-                f"Picos totales: {datos_lote['picos_totales']}"
+            total_necesario = total_metraje_tela(tela, fruncido_deseado)
+            total_asignado = sum(
+                float(c.get("metraje_asignado", 0.0))
+                for c in tela["cortinas"]
             )
+            sobrante_asignado = metros_recibidos - total_asignado
+            fruncido_max = fruncido_maximo_parejo(tela)
 
-            if pico_maestro <= 5:
-                st.warning(
-                    "⚠️ Pico maestro bajo. Para este lote, la tela puede no alcanzar "
-                    "para mantener un pico estético."
+            st.markdown(f"### 📦 {nombre_tela} {f'- {color_tela}' if color_tela else ''}")
+
+            r1, r2, r3, r4 = st.columns(4)
+
+            r1.metric("Metros recibidos", f"{metros_recibidos:.2f} m")
+            r2.metric("Necesario teórico", f"{total_necesario:.2f} m")
+            r3.metric("Total asignado", f"{total_asignado:.2f} m")
+            r4.metric("Sobrante real", f"{sobrante_asignado:.2f} m")
+
+            if not tela["cortinas"]:
+                st.warning("Esta tela todavía no tiene cortinas cargadas.")
+                continue
+
+            if metros_recibidos <= 0:
+                st.warning("Cargá los metros recibidos para validar si alcanza.")
+            elif sobrante_asignado >= 0:
+                st.markdown("""
+                <div class="ok-box">
+                    ✅ La tela alcanza según el metraje asignado a cada cortina.
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown("""
+                <div class="danger-box">
+                    ⚠️ La tela NO alcanza. Estás asignando más metros de los recibidos.
+                </div>
+                """, unsafe_allow_html=True)
+
+            datos_lote = calcular_pico_maestro_lote(tela)
+            pico_maestro = datos_lote.get("pico_maestro_cm")
+
+            st.info(f"Fruncido máximo parejo posible para todo este lote: {fruncido_max:.2f}")
+
+            if pico_maestro is not None:
+                st.info(
+                    f"Pico maestro del lote: {pico_maestro:.2f} cm | "
+                    f"Estructura rígida total: {datos_lote['estructura_total']:.2f} m | "
+                    f"Picos totales: {datos_lote['picos_totales']}"
                 )
 
+                if pico_maestro <= 5:
+                    st.warning(
+                        "⚠️ Pico maestro bajo. Para este lote, la tela puede no alcanzar "
+                        "para mantener un pico estético."
+                    )
 
-# =====================================================
-# RESPALDO
-# =====================================================
 
-st.markdown("## 💾 Respaldo")
+    # =====================================================
+    # RESPALDO
+    # =====================================================
 
-guardar_backup()
+    st.markdown("## 💾 Respaldo")
 
-if ARCHIVO_BACKUP.exists():
-    with open(ARCHIVO_BACKUP, "r", encoding="utf-8") as f:
-        contenido = f.read()
+    guardar_backup()
 
-    st.download_button(
-        "⬇️ Descargar respaldo",
-        data=contenido,
-        file_name="backup_castamuebles_pro.json",
-        mime="application/json"
-    )
+    if ARCHIVO_BACKUP.exists():
+        with open(ARCHIVO_BACKUP, "r", encoding="utf-8") as f:
+            contenido = f.read()
 
-st.caption("Sistema local/offline.")
+        st.download_button(
+            "⬇️ Descargar respaldo",
+            data=contenido,
+            file_name="backup_castamuebles_pro.json",
+            mime="application/json"
+        )
+
+    st.caption("Sistema local/offline.")
